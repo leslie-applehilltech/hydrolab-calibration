@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hydrolab Calibration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    .half-width { max-width: 46%; }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container mt-4 mb-5">
+    <h2 class="text-center mb-4">Hydrolab Calibration Entry</h2>
+    <form id="form">
+      <div class="mb-3">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" id="date" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="calibrator" class="form-label">Calibrator</label>
+        <select id="calibrator" class="form-select" required>
+          <option value="Kellie" selected>Kellie</option>
+          <option value="Heather">Heather</option>
+          <option value="Ryan">Ryan</option>
+          <option value="Leslie">Leslie</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="unit" class="form-label">Hydrolab Unit</label>
+        <select id="unit" class="form-select" required>
+          <option value="Maz Kanata" selected>Maz Kanata</option>
+          <option value="Kylo Ren">Kylo Ren</option>
+        </select>
+      </div>
+      <!-- Grouped Fields -->
+      <div class="mb-3">
+        <label class="form-label">pH 7</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" id="ph7_start" class="form-control" placeholder="Start" min="0" max="10" step="0.01" />
+          </div>
+          <div class="col">
+            <input type="number" id="ph7_end" class="form-control" placeholder="End" min="0" max="10" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">pH 4</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" id="ph4_start" class="form-control" placeholder="Start" min="0" max="10" step="0.01" />
+          </div>
+          <div class="col">
+            <input type="number" id="ph4_end" class="form-control" placeholder="End" min="0" max="10" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Conductivity Standard</label>
+        <div class="row">
+          <div class="col-6">
+            <input type="text" id="cond_standard" class="form-control" placeholder="Standard value" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">spCond</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" id="spcond_start" class="form-control" placeholder="Start" min="0" max="105" step="0.1" />
+          </div>
+          <div class="col">
+            <input type="number" id="spcond_end" class="form-control" placeholder="End" min="0" max="105" step="0.1" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Chla</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" id="chla_start" class="form-control" placeholder="Start" step="0.01" />
+          </div>
+          <div class="col">
+            <input type="number" id="chla_end" class="form-control" placeholder="End" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">PYC</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" id="pyc_start" class="form-control" placeholder="Start" step="0.01" />
+          </div>
+          <div class="col">
+            <input type="number" id="pyc_end" class="form-control" placeholder="End" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="notes" class="form-label">Notes</label>
+        <textarea id="notes" class="form-control" rows="3" placeholder="Any additional comments..."></textarea>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="showConfirmation()">Save Entry</button>
+    </form>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmModalLabel">Confirm Entry</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-sm">
+            <tbody id="confirmationTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="confirmSave()" data-bs-dismiss="modal">Submit Entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function collectFormData() {
+      return {
+        date: document.getElementById("date").value,
+        calibrator: document.getElementById("calibrator").value,
+        unit: document.getElementById("unit").value,
+        ph7_start: document.getElementById("ph7_start").value,
+        ph7_end: document.getElementById("ph7_end").value,
+        ph4_start: document.getElementById("ph4_start").value,
+        ph4_end: document.getElementById("ph4_end").value,
+        cond_standard: document.getElementById("cond_standard").value,
+        spcond_start: document.getElementById("spcond_start").value,
+        spcond_end: document.getElementById("spcond_end").value,
+        chla_start: document.getElementById("chla_start").value,
+        chla_end: document.getElementById("chla_end").value,
+        pyc_start: document.getElementById("pyc_start").value,
+        pyc_end: document.getElementById("pyc_end").value,
+        notes: document.getElementById("notes").value
+      };
+    }
+
+    async function syncToServer(data) {
+      try {
+        const response = await fetch("http://localhost:3000/add-entry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert("Data successfully synced to Google Sheets!");
+        } else {
+          alert("Sync failed: " + result.error);
+        }
+      } catch (error) {
+        alert("Error connecting to server: " + error.message);
+      }
+    }
+
+    function showConfirmation() {
+      const data = collectFormData();
+      const tbody = document.getElementById("confirmationTableBody");
+      tbody.innerHTML = `
+        <tr><th colspan="3">Date: ${data.date}</th></tr>
+        <tr><th colspan="3">Calibrator: ${data.calibrator}</th></tr>
+        <tr><th colspan="3">Hydrolab Unit: ${data.unit}</th></tr>
+        <tr><th colspan="3">Conductivity Standard: ${data.cond_standard}</th></tr>
+        <tr class="table-secondary">
+          <th>Parameter</th><th>Start</th><th>End</th>
+        </tr>
+        <tr><td>pH 7</td><td>${data.ph7_start}</td><td>${data.ph7_end}</td></tr>
+        <tr><td>pH 4</td><td>${data.ph4_start}</td><td>${data.ph4_end}</td></tr>
+        <tr><td>spCond</td><td>${data.spcond_start}</td><td>${data.spcond_end}</td></tr>
+        <tr><td>Chla</td><td>${data.chla_start}</td><td>${data.chla_end}</td></tr>
+        <tr><td>PYC</td><td>${data.pyc_start}</td><td>${data.pyc_end}</td></tr>
+        <tr><td colspan="3"><strong>Notes:</strong> ${data.notes || "<em>(none)</em>"}</td></tr>
+      `;
+      const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+      modal.show();
+    }
+
+    function confirmSave() {
+      const data = collectFormData();
+      syncToServer(data);
+      document.getElementById("form").reset();
+    }
+
+    window.addEventListener("load", () => {
+      document.getElementById("date").value = new Date().toISOString().split("T")[0];
+    });
+  </script>
+</body>
+</html>
