@@ -1,0 +1,15 @@
+# Secrets and credentials
+.env
+service-account.json
+
+# Node dependencies
+node_modules/
+
+# System and editor junk
+.DS_Store
+*.log
+*.tmp
+*.swp
+
+# Optional: VS Code workspace
+.vscode/
