@@ -155,7 +155,8 @@
 
     async function syncToServer(data) {
       try {
-        const response = await fetch("http://localhost:3000/add-entry", {
+        const backendUrl = "https://hydrolab-calibration.onrender.com"; // or load from config
+        const response = await fetch(`${backendUrl}/add-entry`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ data })
