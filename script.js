@@ -1,5 +1,5 @@
 // script.js (updated to use IndexedDB)
-import { saveEntry, getUnsyncedEntries, markAsSynced } from './db.js';
+import { saveEntry, getUnsyncedEntries, markAsSynced } from 'db.js';
 
 // Save form data to IndexedDB
 function saveData() {
