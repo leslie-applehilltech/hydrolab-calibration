@@ -274,9 +274,21 @@
         });
       }
 
+      window.addEventListener("load", () => {
+        if (navigator.onLine) {
+          console.log("Online! Syncing saved data...");
+          syncUnsyncedEntries();
+        }
+      });
+
       window.addEventListener("online", () => {
         document.getElementById("syncButton").disabled = false;
         syncData(); // auto attempt when back online
+      });
+
+      window.addEventListener("online", () => {
+        console.log("Back online! Syncing unsynced data...");
+        syncUnsyncedEntries();
       });
 
       function saveData() {
@@ -409,39 +421,40 @@
       }
 
       async function syncUnsyncedEntries() {
-  const backendUrl = "https://hydrolab-calibration.onrender.com/add-entry";
+        const backendUrl =
+          "https://hydrolab-calibration.onrender.com/add-entry";
 
-  let entries = JSON.parse(localStorage.getItem("calibrationEntries")) || [];
-  const unsynced = entries.filter(e => !e.synced);
-  let syncedCount = 0;
+        let entries =
+          JSON.parse(localStorage.getItem("calibrationEntries")) || [];
+        const unsynced = entries.filter((e) => !e.synced);
+        let syncedCount = 0;
 
-  for (const entry of unsynced) {
-    try {
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: entry })
-      });
+        for (const entry of unsynced) {
+          try {
+            const response = await fetch(backendUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: entry }),
+            });
 
-      const result = await response.json();
-      if (result.success) {
-        entry.synced = true;
-        syncedCount++;
-        console.log("Synced entry:", entry);
-      } else {
-        console.error("Failed to sync:", result.error);
+            const result = await response.json();
+            if (result.success) {
+              entry.synced = true;
+              syncedCount++;
+              console.log("Synced entry:", entry);
+            } else {
+              console.error("Failed to sync:", result.error);
+            }
+          } catch (err) {
+            console.error("Error syncing entry:", err);
+          }
+        }
+
+        localStorage.setItem("calibrationEntries", JSON.stringify(entries));
+        if (syncedCount > 0) {
+          alert(`${syncedCount} entries synced to Google Sheets!`);
+        }
       }
-    } catch (err) {
-      console.error("Error syncing entry:", err);
-    }
-  }
-
-  localStorage.setItem("calibrationEntries", JSON.stringify(entries));
-  if (syncedCount > 0) {
-    alert(`${syncedCount} entries synced to Google Sheets!`);
-  }
-}
-
     </script>
   </body>
 </html>
