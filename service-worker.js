@@ -3,7 +3,6 @@ const urlsToCache = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-192.png",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
 ];
@@ -11,8 +10,16 @@ const urlsToCache = [
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
+      return Promise.all(
+        urlsToCache.map(url =>
+          fetch(url)
+            .then(response => {
+              if (!response.ok) throw new Error(`${url} failed to load`);
+              return cache.put(url, response.clone());
+            })
+        )
+      );
+    }).catch(err => console.error("Cache add failed:", err))
   );
 });
 
