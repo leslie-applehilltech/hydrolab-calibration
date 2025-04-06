@@ -76,9 +76,8 @@ function showConfirmation() {
 
   tbody.innerHTML += `<tr><td colspan="3"><strong>Notes:</strong> ${notes || "<em>(none)</em>"}</td></tr>`;
 
-  const modalEl = document.getElementById("confirmModal");
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  modal.show();
+  const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+modal.show();
 }
 
 function confirmSave() {
