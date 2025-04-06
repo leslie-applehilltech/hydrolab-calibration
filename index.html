@@ -154,7 +154,64 @@
       });
     }
 
-    // Existing JavaScript functions (saveData, showConfirmation, syncData, etc.) remain as-is
+    // JavaScript functions (saveData, showConfirmation, syncData, etc.) remain as-is
   </script>
+  <script>
+    function showConfirmation() {
+      const fields = {
+        Date: document.getElementById("date").value,
+        Calibrator: document.getElementById("calibrator").value,
+        "Hydrolab Unit": document.getElementById("unit").value
+      };
+  
+      const groupedParams = [
+        { label: "pH 7", startId: "ph7_start", endId: "ph7_end" },
+        { label: "pH 4", startId: "ph4_start", endId: "ph4_end" },
+        { label: "spCond", startId: "spcond_start", endId: "spcond_end" },
+        { label: "Chla", startId: "chla_start", endId: "chla_end" },
+        { label: "PYC", startId: "pyc_start", endId: "pyc_end" }
+      ];
+  
+      const condStandard = document.getElementById("cond_standard").value;
+      const notes = document.getElementById("notes").value;
+  
+      const tbody = document.getElementById("confirmationTableBody");
+      tbody.innerHTML = "";
+  
+      for (const [label, value] of Object.entries(fields)) {
+        tbody.innerHTML += `<tr><th colspan="3">${label}: ${value || "<em>(blank)</em>"}</th></tr>`;
+      }
+  
+      tbody.innerHTML += `<tr><th colspan="3">Conductivity Standard: ${condStandard || "<em>(blank)</em>"}</th></tr>`;
+  
+      tbody.innerHTML += `
+        <tr class="table-secondary">
+          <th width="40%">Parameter</th>
+          <th width="30%">Start Value</th>
+          <th width="30%">End Value</th>
+        </tr>`;
+  
+      groupedParams.forEach(param => {
+        const startVal = document.getElementById(param.startId).value;
+        const endVal = document.getElementById(param.endId).value;
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${param.label}</strong></td>
+            <td>${startVal || "-"}</td>
+            <td>${endVal || "-"}</td>
+          </tr>`;
+      });
+  
+      tbody.innerHTML += `<tr><td colspan="3"><strong>Notes:</strong> ${notes || "<em>(none)</em>"}</td></tr>`;
+  
+      const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+      modal.show();
+    }
+  
+    function confirmSave() {
+      saveData();
+    }
+  </script>
+  
 </body>
 </html>
