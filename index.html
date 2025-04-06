@@ -372,9 +372,8 @@
           notes || "<em>(none)</em>"
         }</td></tr>`;
 
-        const modal = new bootstrap.Modal(
-          document.getElementById("confirmModal")
-        );
+        const modalEl = document.getElementById("confirmModal");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
       }
 
