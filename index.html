@@ -153,6 +153,33 @@
       });
     }
 
+    function saveData() {
+      const data = {
+        date: document.getElementById("date").value,
+        calibrator: document.getElementById("calibrator").value,
+        unit: document.getElementById("unit").value,
+        ph7_start: document.getElementById("ph7_start").value,
+        ph7_end: document.getElementById("ph7_end").value,
+        ph4_start: document.getElementById("ph4_start").value,
+        ph4_end: document.getElementById("ph4_end").value,
+        cond_standard: document.getElementById("cond_standard").value,
+        spcond_start: document.getElementById("spcond_start").value,
+        spcond_end: document.getElementById("spcond_end").value,
+        chla_start: document.getElementById("chla_start").value,
+        chla_end: document.getElementById("chla_end").value,
+        pyc_start: document.getElementById("pyc_start").value,
+        pyc_end: document.getElementById("pyc_end").value,
+        notes: document.getElementById("notes").value,
+        synced: false
+      };
+
+      let entries = JSON.parse(localStorage.getItem("calibrationEntries")) || [];
+      entries.push(data);
+      localStorage.setItem("calibrationEntries", JSON.stringify(entries));
+      alert("Saved locally!");
+      document.getElementById("form").reset();
+    }
+
     function showConfirmation() {
       const fields = {
         Date: document.getElementById("date").value,
