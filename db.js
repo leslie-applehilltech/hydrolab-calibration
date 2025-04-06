@@ -35,18 +35,32 @@ export async function saveEntry(entry) {
   });
 }
 
-export async function getUnsyncedEntries() {
-  const db = await openDB();
+export function getUnsyncedEntries() {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index("synced");
-    const request = index.getAll(false); // Look for entries where synced === false
+    const request = indexedDB.open(DB_NAME, 1);
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = function (event) {
+      const db = event.target.result;
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const allRequest = store.getAll();
+
+      allRequest.onsuccess = function () {
+        const unsynced = allRequest.result.filter(entry => entry.synced === false);
+        resolve(unsynced);
+      };
+
+      allRequest.onerror = function (event) {
+        reject(event.target.error);
+      };
+    };
+
+    request.onerror = function (event) {
+      reject(event.target.error);
+    };
   });
 }
+
 
 export async function markAsSynced(id) {
   const db = await openDB();
