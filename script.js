@@ -128,6 +128,8 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+document.getElementById("saveButton").addEventListener("click", showConfirmation);
+
 window.addEventListener("online", () => {
   console.log("Back online, attempting sync...");
   syncUnsyncedEntries();
