@@ -130,6 +130,9 @@ if ("serviceWorker" in navigator) {
 
 document.getElementById("saveButton").addEventListener("click", showConfirmation);
 
+window.showConfirmation = showConfirmation;
+window.confirmSave = confirmSave;
+
 window.addEventListener("online", () => {
   console.log("Back online, attempting sync...");
   syncUnsyncedEntries();
