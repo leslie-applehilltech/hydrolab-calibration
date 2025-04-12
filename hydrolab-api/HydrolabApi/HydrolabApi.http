@@ -1,0 +1,6 @@
+@HydrolabApi_HostAddress = http://localhost:5259
+
+GET {{HydrolabApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
