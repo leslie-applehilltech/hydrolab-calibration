@@ -1,34 +1,5 @@
-// script.js (updated to use IndexedDB)
-import { saveEntry, getUnsyncedEntries, markAsSynced } from './db.js';
+// script.js (downloads JSON + uploads to .NET Web API + emails via Mailgun + iOS guidance + attachment support)
 
-// Save form data to IndexedDB
-function saveData() {
-  const data = {
-    date: document.getElementById("date").value,
-    calibrator: document.getElementById("calibrator").value,
-    unit: document.getElementById("unit").value,
-    ph7_start: document.getElementById("ph7_start").value,
-    ph7_end: document.getElementById("ph7_end").value,
-    ph4_start: document.getElementById("ph4_start").value,
-    ph4_end: document.getElementById("ph4_end").value,
-    cond_standard: document.getElementById("cond_standard").value,
-    spcond_start: document.getElementById("spcond_start").value,
-    spcond_end: document.getElementById("spcond_end").value,
-    chla_start: document.getElementById("chla_start").value,
-    chla_end: document.getElementById("chla_end").value,
-    pyc_start: document.getElementById("pyc_start").value,
-    pyc_end: document.getElementById("pyc_end").value,
-    notes: document.getElementById("notes").value,
-    synced: false,
-  };
-
-  saveEntry(data).then(() => {
-    alert("Saved locally!");
-    document.getElementById("form").reset();
-  });
-}
-
-// Show confirmation modal
 function showConfirmation() {
   const fields = {
     Date: document.getElementById("date").value,
@@ -77,63 +48,87 @@ function showConfirmation() {
   tbody.innerHTML += `<tr><td colspan="3"><strong>Notes:</strong> ${notes || "<em>(none)</em>"}</td></tr>`;
 
   const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
-modal.show();
+  modal.show();
 }
 
 function confirmSave() {
-  saveData();
-}
+  const data = {
+    date: document.getElementById("date").value,
+    calibrator: document.getElementById("calibrator").value,
+    unit: document.getElementById("unit").value,
+    ph7_start: document.getElementById("ph7_start").value,
+    ph7_end: document.getElementById("ph7_end").value,
+    ph4_start: document.getElementById("ph4_start").value,
+    ph4_end: document.getElementById("ph4_end").value,
+    cond_standard: document.getElementById("cond_standard").value,
+    spcond_start: document.getElementById("spcond_start").value,
+    spcond_end: document.getElementById("spcond_end").value,
+    chla_start: document.getElementById("chla_start").value,
+    chla_end: document.getElementById("chla_end").value,
+    pyc_start: document.getElementById("pyc_start").value,
+    pyc_end: document.getElementById("pyc_end").value,
+    notes: document.getElementById("notes").value,
+  };
 
-// Auto-sync unsynced entries from IndexedDB to backend
-async function syncUnsyncedEntries() {
-  const backendUrl = "https://hydrolab-calibration.onrender.com/add-entry";
-  const unsynced = await getUnsyncedEntries();
-  let syncedCount = 0;
+  const filename = `hydrolab-calibration-${data.date || "entry"}.json`;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
 
-  for (const entry of unsynced) {
-    try {
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: entry }),
-      });
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 
-      const result = await response.json();
-      if (result.success) {
-        await markAsSynced(entry.id);
-        syncedCount++;
-        console.log("Synced entry:", entry);
-      }
-    } catch (err) {
-      console.error("Sync failed for entry:", err);
-    }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    alert("iPhone/iPad Users: After downloading, tap the Share icon and select 'Save to Files' → choose your synced SharePoint or OneDrive folder.");
   }
 
-  if (syncedCount > 0) {
-    alert(`${syncedCount} entries synced to Google Sheets!`);
+  if (navigator.onLine) {
+    // Upload to API
+    fetch("https://your-personal-server.com/api/HydrolabUpload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    }).then(res => {
+      if (!res.ok) throw new Error("Upload failed");
+      console.log("Uploaded to personal .NET Web API successfully.");
+    }).catch(err => {
+      console.warn("Upload to .NET Web API failed:", err);
+    });
+
+    // Email with JSON attachment
+    const formData = new FormData();
+    formData.append("to", "you@example.com");
+    formData.append("from", "noreply@yourdomain.com");
+    formData.append("subject", `Hydrolab Calibration: ${data.date}`);
+    formData.append("text", `Calibration entry from ${data.calibrator} on unit ${data.unit}`);
+    formData.append("attachment", blob, filename);
+
+    fetch("https://api.mailgun.net/v3/YOUR_DOMAIN/messages", {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + btoa("api:YOUR_MAILGUN_API_KEY")
+      },
+      body: formData
+    }).then(res => {
+      if (!res.ok) throw new Error("Email failed");
+      console.log("Email with attachment sent via Mailgun.");
+    }).catch(err => {
+      console.warn("Mailgun email failed:", err);
+    });
+  } else {
+    alert("Saved locally. Unable to send now (offline). Upload/email will need to be done later.");
   }
+
+  document.getElementById("form").reset();
+  document.getElementById("date").value = new Date().toISOString().split("T")[0];
 }
-
-// Register service worker and trigger sync when online
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js")
-      .then((reg) => console.log("Service Worker registered:", reg.scope))
-      .catch((err) => console.error("Service Worker registration failed:", err));
-
-    // Attempt sync on load
-    if (navigator.onLine) {
-      syncUnsyncedEntries();
-    }
-  });
-}
-
-document.getElementById("saveButton").addEventListener("click", showConfirmation);
 
 window.showConfirmation = showConfirmation;
 window.confirmSave = confirmSave;
 
-window.addEventListener("online", () => {
-  console.log("Back online, attempting sync...");
-  syncUnsyncedEntries();
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("date").value = new Date().toISOString().split("T")[0];
 });
