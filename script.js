@@ -1,5 +1,19 @@
 // script.js (downloads JSON + uploads to .NET Web API + emails via Mailgun + iOS guidance + attachment support)
 
+const dbPromise = idb.openDB('hydrolab-db', 1, {
+  upgrade(db) {
+    if (!db.objectStoreNames.contains('calibrations')) {
+      db.createObjectStore('calibrations', { keyPath: 'id', autoIncrement: true });
+    }
+  }
+});
+
+async function saveToIndexedDB(entry) {
+  const db = await dbPromise;
+  await db.add('calibrations', entry);
+  console.log("Saved to IndexedDB:", entry);
+}
+
 function showConfirmation() {
   const fields = {
     Date: document.getElementById("date").value,
@@ -86,41 +100,15 @@ function confirmSave() {
   }
 
   if (navigator.onLine) {
-    // Upload to API
-    fetch("https://your-personal-server.com/api/HydrolabUpload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    }).then(res => {
-      if (!res.ok) throw new Error("Upload failed");
-      console.log("Uploaded to personal .NET Web API successfully.");
-    }).catch(err => {
-      console.warn("Upload to .NET Web API failed:", err);
-    });
-
-    // Email with JSON attachment
-    const formData = new FormData();
-    formData.append("to", "you@example.com");
-    formData.append("from", "noreply@yourdomain.com");
-    formData.append("subject", `Hydrolab Calibration: ${data.date}`);
-    formData.append("text", `Calibration entry from ${data.calibrator} on unit ${data.unit}`);
-    formData.append("attachment", blob, filename);
-
-    fetch("https://api.mailgun.net/v3/YOUR_DOMAIN/messages", {
-      method: "POST",
-      headers: {
-        "Authorization": "Basic " + btoa("api:YOUR_MAILGUN_API_KEY")
-      },
-      body: formData
-    }).then(res => {
-      if (!res.ok) throw new Error("Email failed");
-      console.log("Email with attachment sent via Mailgun.");
-    }).catch(err => {
-      console.warn("Mailgun email failed:", err);
-    });
+    const bodyText = encodeURIComponent(JSON.stringify(data, null, 2));
+    const subject = `Hydrolab Calibration: ${data.date}`;
+    const mailto = `mailto:leslie.matthews@vermont.gov?subject=${subject}&body=${bodyText}`;
+    window.location.href = mailto;
+    alert("Email app opened. After sending, you may delete the file from Files app.");
   } else {
-    alert("Saved locally. Unable to send now (offline). Upload/email will need to be done later.");
+    alert("Saved locally. When you're back online, open the app again and send the file.");
   }
+
 
   document.getElementById("form").reset();
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
@@ -132,3 +120,57 @@ window.confirmSave = confirmSave;
 window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log("Service worker registered."))
+    .catch(err => console.error("Service worker registration failed:", err));
+}
+
+async function loadSavedEntries() {
+  const db = await dbPromise;
+  const entries = await db.getAll('calibrations');
+
+  const container = document.getElementById('savedEntries');
+  container.innerHTML = "";
+
+  if (!entries.length) {
+    container.innerHTML = "<p class='text-muted'>No saved entries yet.</p>";
+    return;
+  }
+
+  entries.forEach((entry, index) => {
+    const card = document.createElement("div");
+    card.className = "card mb-3";
+    card.innerHTML = `
+      <div class="card-body">
+        <h5 class="card-title">${entry.date} – ${entry.unit}</h5>
+        <p class="card-text">Calibrator: ${entry.calibrator}</p>
+        <button class="btn btn-success me-2" onclick="sendEntry(${entry.id})">Send to SharePoint</button>
+        <button class="btn btn-outline-danger btn-sm" onclick="deleteEntry(${entry.id})">Delete</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function deleteEntry(id) {
+  const db = await dbPromise;
+  await db.delete('calibrations', id);
+  await loadSavedEntries();
+}
+
+async function sendEntry(id) {
+  const db = await dbPromise;
+  const entry = await db.get('calibrations', id);
+  const body = encodeURIComponent(JSON.stringify(entry, null, 2));
+  const subject = `Hydrolab Calibration: ${entry.date}`;
+  const mailto = `mailto:leslie.matthews@vermont.com?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+
+  // Optionally auto-delete after opening email
+  setTimeout(async () => {
+    await deleteEntry(id);
+  }, 2000);
+}
+
