@@ -3,7 +3,7 @@ const msalConfig = {
   auth: {
     clientId: "a3500a1a-636b-4a64-9b06-63420bf0fe4c",
     authority: "https://login.microsoftonline.com/72e3dc14-d74c-4b22-a35c-d094bd2a99d0",
-    redirectUri: window.location.origin
+    redirectUri: "https://leslie-applehilltech.github.io/hydrolab-calibration/"
   },
   cache: {
     cacheLocation: "localStorage"
