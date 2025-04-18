@@ -33,7 +33,8 @@ const driveId = "b!qEasz3q0V0-mje7o5fW3zSbyZ1f9-WxMk6hCPnBPozEB19cLT3iPTr3S53F-v
 
 async function saveToIndexedDB(entry) {
   const db = await dbPromise;
-  await db.add('calibrations', entry);
+  const id = await db.add('calibrations', entry);
+  entry.id = id;
   console.log("Saved to IndexedDB:", entry);
   await loadSavedEntries();
 }
@@ -114,11 +115,18 @@ async function confirmSave() {
 }
 
 async function tryUploadEntry(entry) {
-  if (!navigator.onLine) return;
+  if (!navigator.onLine) {
+    console.warn("Offline: Skipping upload");
+    return;
+  }
+
   try {
     const token = await loginAndGetToken();
     const filename = `hydrolab-calibration-${entry.date || "entry"}.json`;
     const uploadUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drives/${driveId}/root:/Hydrolab Calibration/${filename}:/content`;
+
+    console.log("Attempting upload to SharePoint:", uploadUrl);
+    console.log("Entry data:", entry);
 
     const res = await fetch(uploadUrl, {
       method: "PUT",
@@ -129,14 +137,21 @@ async function tryUploadEntry(entry) {
       body: JSON.stringify(entry, null, 2)
     });
 
+    const responseText = await res.text();
+    console.log("Upload response status:", res.status);
+    console.log("Upload response body:", responseText);
+
     if (res.ok) {
-      console.log(`Uploaded: ${filename}`);
-      await deleteEntry(entry.id); // cleanup if uploaded
+      console.log(`✅ Successfully uploaded: ${filename}`);
+      await deleteEntry(entry.id);
+    } else {
+      console.warn(`❌ Upload failed: HTTP ${res.status}`);
     }
   } catch (e) {
-    console.warn("Upload failed", e);
+    console.error("❌ Upload exception:", e);
   }
 }
+
 
 async function loadSavedEntries() {
   const db = await dbPromise;
