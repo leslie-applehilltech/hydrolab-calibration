@@ -1,13 +1,4 @@
 // script.js (downloads JSON + uploads to .NET Web API + emails via Mailgun + iOS guidance + attachment support)
-
-const dbPromise = idb.openDB('hydrolab-db', 1, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains('calibrations')) {
-      db.createObjectStore('calibrations', { keyPath: 'id', autoIncrement: true });
-    }
-  }
-});
-
 async function saveToIndexedDB(entry) {
   const db = await dbPromise;
   await db.add('calibrations', entry);
