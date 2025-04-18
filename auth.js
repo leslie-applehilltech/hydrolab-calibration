@@ -1,8 +1,8 @@
 // auth.js for in-browser use (no import needed)
 const msalConfig = {
   auth: {
-    clientId: "YOUR_CLIENT_ID",
-    authority: "https://login.microsoftonline.com/YOUR_TENANT_ID",
+    clientId: "a3500a1a-636b-4a64-9b06-63420bf0fe4c",
+    authority: "https://login.microsoftonline.com/72e3dc14-d74c-4b22-a35c-d094bd2a99d0",
     redirectUri: window.location.origin
   },
   cache: {

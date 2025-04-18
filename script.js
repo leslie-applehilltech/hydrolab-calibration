@@ -1,16 +1,4 @@
 // --- script.js (with sync button logic) ---
-// Initialize IndexedDB
-const dbPromise = idb.openDB('hydrolab-db', 1, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains('calibrations')) {
-      db.createObjectStore('calibrations', {
-        keyPath: 'id',
-        autoIncrement: true
-      });
-    }
-  }
-});
-
 // Assumes auth.js is loaded globally before this script
 const siteId = "applehilltech376.sharepoint.com,cfac46a8-b47a-4f57-a68d-eee8e5f5b7cd,5767f226-f9fd-4c6c-93a8-423e704fa331";
 const driveId = "b!qEasz3q0V0-mje7o5fW3zSbyZ1f9-WxMk6hCPnBPozEB19cLT3iPTr3S53F-vMq9";
