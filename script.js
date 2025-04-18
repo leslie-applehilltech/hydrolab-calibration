@@ -1,8 +1,14 @@
-// script.js (downloads JSON + uploads to .NET Web API + emails via Mailgun + iOS guidance + attachment support)
+// --- script.js (with sync button logic) ---
+
+// Assumes auth.js is loaded globally before this script
+const siteId = "applehilltech376.sharepoint.com,cfac46a8-b47a-4f57-a68d-eee8e5f5b7cd,5767f226-f9fd-4c6c-93a8-423e704fa331";
+const driveId = "b!qEasz3q0V0-mje7o5fW3zSbyZ1f9-WxMk6hCPnBPozEB19cLT3iPTr3S53F-vMq9";
+
 async function saveToIndexedDB(entry) {
   const db = await dbPromise;
   await db.add('calibrations', entry);
   console.log("Saved to IndexedDB:", entry);
+  await loadSavedEntries();
 }
 
 function showConfirmation() {
@@ -22,7 +28,6 @@ function showConfirmation() {
 
   const condStandard = document.getElementById("cond_standard").value;
   const notes = document.getElementById("notes").value;
-
   const tbody = document.getElementById("confirmationTableBody");
   tbody.innerHTML = "";
 
@@ -31,7 +36,6 @@ function showConfirmation() {
   }
 
   tbody.innerHTML += `<tr><th colspan="3">Conductivity Standard: ${condStandard || "<em>(blank)</em>"}</th></tr>`;
-
   tbody.innerHTML += `
     <tr class="table-secondary">
       <th width="40%">Parameter</th>
@@ -56,7 +60,7 @@ function showConfirmation() {
   modal.show();
 }
 
-function confirmSave() {
+async function confirmSave() {
   const data = {
     date: document.getElementById("date").value,
     calibrator: document.getElementById("calibrator").value,
@@ -75,53 +79,41 @@ function confirmSave() {
     notes: document.getElementById("notes").value,
   };
 
-  const filename = `hydrolab-calibration-${data.date || "entry"}.json`;
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (isIOS) {
-    alert("iPhone/iPad Users: After downloading, tap the Share icon and select 'Save to Files' → choose your synced SharePoint or OneDrive folder.");
-  }
-
-  if (navigator.onLine) {
-    const bodyText = encodeURIComponent(JSON.stringify(data, null, 2));
-    const subject = `Hydrolab Calibration: ${data.date}`;
-    const mailto = `mailto:leslie.matthews@vermont.gov?subject=${subject}&body=${bodyText}`;
-    window.location.href = mailto;
-    alert("Email app opened. After sending, you may delete the file from Files app.");
-  } else {
-    alert("Saved locally. When you're back online, open the app again and send the file.");
-  }
-
+  await saveToIndexedDB(data);
+  await tryUploadEntry(data);
 
   document.getElementById("form").reset();
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
 }
 
-window.showConfirmation = showConfirmation;
-window.confirmSave = confirmSave;
+async function tryUploadEntry(entry) {
+  if (!navigator.onLine) return;
+  try {
+    const token = await loginAndGetToken();
+    const filename = `hydrolab-calibration-${entry.date || "entry"}.json`;
+    const uploadUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drives/${driveId}/root:/Hydrolab Calibration/${filename}:/content`;
 
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("date").value = new Date().toISOString().split("T")[0];
-});
+    const res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(entry, null, 2)
+    });
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log("Service worker registered."))
-    .catch(err => console.error("Service worker registration failed:", err));
+    if (res.ok) {
+      console.log(`Uploaded: ${filename}`);
+      await deleteEntry(entry.id); // cleanup if uploaded
+    }
+  } catch (e) {
+    console.warn("Upload failed", e);
+  }
 }
 
 async function loadSavedEntries() {
   const db = await dbPromise;
   const entries = await db.getAll('calibrations');
-
   const container = document.getElementById('savedEntries');
   container.innerHTML = "";
 
@@ -130,15 +122,14 @@ async function loadSavedEntries() {
     return;
   }
 
-  entries.forEach((entry, index) => {
+  entries.forEach((entry) => {
     const card = document.createElement("div");
     card.className = "card mb-3";
     card.innerHTML = `
       <div class="card-body">
         <h5 class="card-title">${entry.date} – ${entry.unit}</h5>
         <p class="card-text">Calibrator: ${entry.calibrator}</p>
-        <button class="btn btn-success me-2" onclick="sendEntry(${entry.id})">Send to SharePoint</button>
-        <button class="btn btn-outline-danger btn-sm" onclick="deleteEntry(${entry.id})">Delete</button>
+        <pre class="small">${JSON.stringify(entry, null, 2)}</pre>
       </div>
     `;
     container.appendChild(card);
@@ -151,17 +142,33 @@ async function deleteEntry(id) {
   await loadSavedEntries();
 }
 
-async function sendEntry(id) {
-  const db = await dbPromise;
-  const entry = await db.get('calibrations', id);
-  const body = encodeURIComponent(JSON.stringify(entry, null, 2));
-  const subject = `Hydrolab Calibration: ${entry.date}`;
-  const mailto = `mailto:leslie.matthews@vermont.com?subject=${subject}&body=${body}`;
-  window.location.href = mailto;
+async function syncSavedEntries() {
+  if (!navigator.onLine) {
+    alert("You are currently offline. Sync not possible.");
+    return;
+  }
 
-  // Optionally auto-delete after opening email
-  setTimeout(async () => {
-    await deleteEntry(id);
-  }, 2000);
+  const db = await dbPromise;
+  const entries = await db.getAll('calibrations');
+
+  for (const entry of entries) {
+    await tryUploadEntry(entry);
+  }
+
+  alert("Sync complete. Check console for upload logs.");
 }
 
+window.showConfirmation = showConfirmation;
+window.confirmSave = confirmSave;
+window.syncSavedEntries = syncSavedEntries;
+
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("date").value = new Date().toISOString().split("T")[0];
+  loadSavedEntries();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log("Service worker registered."))
+    .catch(err => console.error("Service worker registration failed:", err));
+}
