@@ -3,12 +3,17 @@
 let dbPromise;
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const today = new Date();
-  const formatted = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
-  const dateInput = document.getElementById("date");
-  if (dateInput) {
-    dateInput.value = formatted;
-  }
+const today = new Date();
+const uiFormatted = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+const dateInput = document.getElementById("date");
+if (dateInput) {
+  dateInput.value = uiFormatted;
+}
+
+const fileDate = today.toISOString().split('T')[0]; // "2025-04-19"
+const time = today.toTimeString().split(' ')[0].replace(/:/g, '-'); // "15-47-00"
+const fileName = `calibration-${fileDate}_${time}.json`;
+console.log("File name:", fileName);
 
   if (window.idb && typeof idb.openDB === "function") {
     dbPromise = idb.openDB('hydrolab-db', 1, {
@@ -177,7 +182,13 @@ async function tryUploadEntry(entry) {
   try {
     const token = await loginAndGetToken();
     const now = new Date();
-const localDate = entry.date || now.toISOString().split("T")[0];
+// Convert MM/DD/YYYY (from UI) to YYYY-MM-DD for safe filename
+function formatDateForFilename(dateStr) {
+  if (!dateStr.includes("/")) return dateStr; // already ISO
+  const [month, day, year] = dateStr.split("/");
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+const localDate = formatDateForFilename(entry.date || now.toISOString().split("T")[0]);
 const localTime = now.toLocaleTimeString([], { hour12: false }).replace(/:/g, "-");
 const filename = `hydrolab-calibration-${localDate}_${localTime}.json`;
 
