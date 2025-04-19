@@ -17,24 +17,23 @@ async function loginAndGetToken() {
     scopes: ["Sites.ReadWrite.All", "Files.ReadWrite"]
   };
 
-  const account = msalInstance.getAllAccounts()[0];
+  let account = msalInstance.getAllAccounts()[0];
 
-  if (account) {
-    try {
-      const tokenResponse = await msalInstance.acquireTokenSilent({
-        ...loginRequest,
-        account
-      });
-      return tokenResponse.accessToken;
-    } catch (e) {
-      console.warn("Silent token failed, falling back to popup", e);
-    }
+  if (!account) {
+    console.log("No cached account. Triggering loginPopup...");
+    const loginResponse = await msalInstance.loginPopup(loginRequest);
+    account = loginResponse.account;
   }
 
-  const loginResponse = await msalInstance.loginPopup(loginRequest);
-  const tokenResponse = await msalInstance.acquireTokenSilent({
-    ...loginRequest,
-    account: loginResponse.account
-  });
-  return tokenResponse.accessToken;
+  try {
+    const tokenResponse = await msalInstance.acquireTokenSilent({
+      ...loginRequest,
+      account
+    });
+    return tokenResponse.accessToken;
+  } catch (e) {
+    console.warn("Silent token acquisition failed. Falling back to popup...");
+    const tokenResponse = await msalInstance.acquireTokenPopup(loginRequest);
+    return tokenResponse.accessToken;
+  }
 }
