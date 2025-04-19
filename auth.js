@@ -37,3 +37,9 @@ async function loginAndGetToken() {
     return tokenResponse.accessToken;
   }
 }
+
+window.msalInstance = msalInstance;
+if (typeof updateLoginStatus === "function") {
+  updateLoginStatus();
+}
+

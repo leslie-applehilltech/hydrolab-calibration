@@ -19,15 +19,16 @@
   </style>
 </head>
 <body class="bg-light"> 
-  <header class="app-header">
-    <h1 class="mb-0">Hydrolab Calibration</h1>
-    <div class="login-controls">
+  <header style="text-align: center; padding: 1rem;">
+    <h1 class="mb-3">Hydrolab Calibration</h1>
+  </header>  
+  <div class="container px-0" style="max-width: 600px;">
+    <div class="d-flex align-items-center gap-2">
       <span id="loginStatus" style="font-size: 0.9rem;"></span>
       <button onclick="loginManually()" class="btn btn-outline-primary btn-sm">Login</button>
       <button onclick="logoutManually()" class="btn btn-outline-secondary btn-sm">Logout</button>
     </div>
-  </header> 
-  <div class="container">
+  <!-- Form -->
     <form id="form" onsubmit="event.preventDefault(); saveData();">
       <div class="mb-3">
         <label for="date" class="form-label">Date</label>
@@ -130,6 +131,7 @@
     </form>
   </div>
 
+  <!-- Saved entries -->
   <hr class="my-4" />
   <h4 class="text-center">Saved Entries</h4>
   <div class="text-center mb-3">
@@ -137,6 +139,7 @@
   </div>
   <div id="savedEntries" class="mt-3"></div>
 
+  <!-- Confirmation Modal -->
   <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
