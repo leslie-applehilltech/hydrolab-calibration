@@ -3,7 +3,12 @@
 let dbPromise;
 
 window.addEventListener("DOMContentLoaded", async () => {
-  document.getElementById("date").value = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  const formatted = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+  const dateInput = document.getElementById("date");
+  if (dateInput) {
+    dateInput.value = formatted;
+  }
 
   if (window.idb && typeof idb.openDB === "function") {
     dbPromise = idb.openDB('hydrolab-db', 1, {
