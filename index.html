@@ -18,14 +18,16 @@
     }
   </style>
 </head>
-<body class="bg-light">
-  <div class="ms-auto d-flex gap-2 align-items-center">
-    <span id="loginStatus" class="text-light small"></span>
-    <button onclick="loginManually()" class="btn btn-outline-light btn-sm">Login</button>
-    <button onclick="logoutManually()" class="btn btn-outline-light btn-sm">Logout</button>
-  </div>  
-  <div class="container mt-4 mb-5">
-    <h2 class="text-center mb-4">Hydrolab Calibration Entry</h2>
+<body class="bg-light"> 
+  <header class="app-header">
+    <h1 class="mb-0">Hydrolab Calibration</h1>
+    <div class="login-controls">
+      <span id="loginStatus" style="font-size: 0.9rem;"></span>
+      <button onclick="loginManually()" class="btn btn-outline-primary btn-sm">Login</button>
+      <button onclick="logoutManually()" class="btn btn-outline-secondary btn-sm">Logout</button>
+    </div>
+  </header> 
+  <div class="container">
     <form id="form" onsubmit="event.preventDefault(); saveData();">
       <div class="mb-3">
         <label for="date" class="form-label">Date</label>
