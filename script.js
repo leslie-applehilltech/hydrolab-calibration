@@ -171,7 +171,8 @@ async function tryUploadEntry(entry) {
 
   try {
     const token = await loginAndGetToken();
-    const filename = `hydrolab-calibration-${entry.date || "entry"}.json`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `hydrolab-calibration-${entry.date || "entry"}-${timestamp}.json`;
     const uploadUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drives/${driveId}/root:/Hydrolab Calibration/${filename}:/content`;
 
     console.log("Attempting upload to SharePoint:", uploadUrl);
