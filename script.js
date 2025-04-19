@@ -204,6 +204,7 @@ async function tryUploadEntry(entry) {
 window.loginManually = async () => {
   try {
     await loginAndGetToken();
+    updateLoginStatus(); 
   } catch (err) {
     console.error("Manual login failed:", err);
   }
@@ -214,6 +215,7 @@ window.logoutManually = async () => {
   if (accounts.length > 0) {
     await msalInstance.logoutPopup({ account: accounts[0] });
   }
+  updateLoginStatus(); // ✅ this is good
 };
 
 function updateLoginStatus() {
