@@ -220,12 +220,13 @@ window.loginManually = async () => {
 };
 
 window.logoutManually = async () => {
-  const accounts = msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    await msalInstance.logoutPopup({ account: accounts[0] });
+  const account = msalInstance.getAllAccounts()[0];
+  if (account) {
+    await msalInstance.logoutPopup({ account });
+    updateLoginStatus();
   }
-  updateLoginStatus(); // ✅ this is good
 };
+
 
 function updateLoginStatus() {
   const display = document.getElementById("loginStatus");
