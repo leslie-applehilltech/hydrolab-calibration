@@ -19,6 +19,11 @@
   </style>
 </head>
 <body class="bg-light">
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <span id="loginStatus" class="text-light small"></span>
+    <button onclick="loginManually()" class="btn btn-outline-light btn-sm">Login</button>
+    <button onclick="logoutManually()" class="btn btn-outline-light btn-sm">Logout</button>
+  </div>  
   <div class="container mt-4 mb-5">
     <h2 class="text-center mb-4">Hydrolab Calibration Entry</h2>
     <form id="form" onsubmit="event.preventDefault(); saveData();">

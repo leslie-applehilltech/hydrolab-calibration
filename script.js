@@ -1,5 +1,5 @@
-// Assumes auth.js is loaded globally before this script
-// --- script.js (with sync button logic + IndexedDB setup) ---
+// --- script.js (with sync button logic + IndexedDB setup + Login/Logout UI) ---
+
 let dbPromise;
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -26,10 +26,12 @@ window.addEventListener("DOMContentLoaded", async () => {
       .then(() => console.log("Service worker registered."))
       .catch(err => console.error("Service worker registration failed:", err));
   }
+
+  updateLoginStatus();
 });
 
-const siteId = "applehilltech376.sharepoint.com,cfac46a8-b47a-4f57-a68d-eee8e5f5b7cd,5767f226-f9fd-4c6c-93a8-423e704fa331";
-const driveId = "b!qEasz3q0V0-mje7o5fW3zSbyZ1f9-WxMk6hCPnBPozEB19cLT3iPTr3S53F-vMq9";
+const siteId = "YOUR_SITE_ID";
+const driveId = "YOUR_DRIVE_ID";
 
 async function saveToIndexedDB(entry) {
   const db = await dbPromise;
@@ -152,54 +154,27 @@ async function tryUploadEntry(entry) {
   }
 }
 
+// --- LOGIN / LOGOUT CONTROLS ---
 
-async function loadSavedEntries() {
-  const db = await dbPromise;
-  const entries = await db.getAll('calibrations');
-  const container = document.getElementById('savedEntries');
-  container.innerHTML = "";
-
-  if (!entries.length) {
-    container.innerHTML = "<p class='text-muted'>No saved entries yet.</p>";
-    return;
+window.loginManually = async () => {
+  try {
+    await loginAndGetToken();
+    updateLoginStatus();
+  } catch (err) {
+    console.error("Manual login failed:", err);
   }
+};
 
-  entries.forEach((entry) => {
-    const card = document.createElement("div");
-    card.className = "card mb-3";
-    card.innerHTML = `
-      <div class="card-body">
-        <h5 class="card-title">${entry.date} – ${entry.unit}</h5>
-        <p class="card-text">Calibrator: ${entry.calibrator}</p>
-        <pre class="small">${JSON.stringify(entry, null, 2)}</pre>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-async function deleteEntry(id) {
-  const db = await dbPromise;
-  await db.delete('calibrations', id);
-  await loadSavedEntries();
-}
-
-async function syncSavedEntries() {
-  if (!navigator.onLine) {
-    alert("You are currently offline. Sync not possible.");
-    return;
+window.logoutManually = async () => {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    await msalInstance.logoutPopup({ account: accounts[0] });
+    updateLoginStatus();
   }
+};
 
-  const db = await dbPromise;
-  const entries = await db.getAll('calibrations');
-
-  for (const entry of entries) {
-    await tryUploadEntry(entry);
-  }
-
-  alert("Sync complete. Check console for upload logs.");
+function updateLoginStatus() {
+  const display = document.getElementById("loginStatus");
+  const accounts = msalInstance.getAllAccounts();
+  display.textContent = accounts.length > 0 ? `Signed in as: ${accounts[0].username}` : "Not signed in";
 }
-
-window.showConfirmation = showConfirmation;
-window.confirmSave = confirmSave;
-window.syncSavedEntries = syncSavedEntries;
