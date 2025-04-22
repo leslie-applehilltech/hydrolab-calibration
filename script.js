@@ -115,7 +115,6 @@ async function uploadEntryById(id) {
   if (!entry) return alert("Entry not found.");
   await tryUploadEntry(entry);
   await loadSavedEntries(); // refresh the list
-  updateLoginStatus();            // 🔁 Force MSAL/session refresh before calling Graph API
   await loadUploadedFiles();     // refresh SharePoint file list
 }
 
