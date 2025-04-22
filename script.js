@@ -115,7 +115,7 @@ async function uploadEntryById(id) {
   if (!entry) return alert("Entry not found.");
   await tryUploadEntry(entry);
   await loadSavedEntries(); // refresh the list
-  await loadUploadedFiles();     // refresh SharePoint file list
+  await loadUploadedFiles(); // refresh SharePoint file list
 }
 
 async function confirmDeleteEntry(id) {
@@ -222,7 +222,7 @@ async function confirmSave() {
   };
 
   await saveToIndexedDB(data);
-  await loadSavedEntries
+  await loadSavedEntries;
 
   document.getElementById("form").reset();
   document.getElementById("date").value = new Date()
@@ -287,7 +287,15 @@ async function loadUploadedFiles() {
   container.innerHTML = "<p class='text-muted'>Loading...</p>";
 
   try {
-    const token = await loginAndGetToken(); // Uses MSAL login
+    let token;
+    try {
+      token = await loginAndGetToken(); // force fresh token
+    } catch (err) {
+      console.error("Failed to get token:", err);
+      container.innerHTML = `<p class="text-danger">Login expired. Please sign in again.</p>`;
+      return;
+    }
+
     const res = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drives/${driveId}/root:/Hydrolab Calibration:/children`,
       {
@@ -303,7 +311,10 @@ async function loadUploadedFiles() {
 
     const data = await res.json();
     const files = data.value || [];
-    files.sort((a, b) => new Date(b.lastModifiedDateTime) - new Date(a.lastModifiedDateTime));
+    files.sort(
+      (a, b) =>
+        new Date(b.lastModifiedDateTime) - new Date(a.lastModifiedDateTime)
+    );
 
     if (files.length === 0) {
       container.innerHTML =
@@ -340,13 +351,14 @@ function updateLoginStatus() {
   const accounts = msalInstance.getAllAccounts();
   const loggedIn = accounts.length > 0;
 
-  display.textContent = loggedIn ? `Signed in as: ${accounts[0].username}` : "Not signed in";
+  display.textContent = loggedIn
+    ? `Signed in as: ${accounts[0].username}`
+    : "Not signed in";
 
   if (loggedIn && typeof loadUploadedFiles === "function") {
     loadUploadedFiles();
   }
 }
-
 
 window.loginManually = async () => {
   try {
@@ -364,8 +376,6 @@ window.logoutManually = async () => {
     updateLoginStatus();
   }
 };
-
-
 
 function waitForMsal() {
   if (typeof window.msalInstance !== "undefined") {
